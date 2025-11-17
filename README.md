@@ -1,36 +1,78 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Hedgie Number Dash - Next.js Version
+
+A production-quality educational math game built with Next.js, featuring proper page-by-page routing where each screen is a separate route.
+
+## Features
+
+### Proper Routing
+Each screen is now a proper Next.js route:
+- `/` - Home screen
+- `/customize` - Grade and mode selection
+- `/game` - Main gameplay
+- `/highscore` - High score leaderboard
+- `/instructions` - How to play tutorial
+
+### Game Features
+- **Game Modes**: Endless Mode and 90 Second Sprint
+- **Difficulty Levels**: Kindergarten through Fifth Grade
+- **Dynamic Question Generation**: Math problems tailored to each grade level
+- **Scoring System**: +5 for correct, -4 for incorrect answers
+- **Health System**: 3 hearts with visual feedback
+- **Persistent High Scores**: Top 5 scores saved in localStorage
+- **Smooth Animations**: Hedgehog jumping and blinking
+- **Responsive Timer**: Decreases difficulty over time
 
 ## Getting Started
 
-First, run the development server:
+### Development
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000) in your browser.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### Build for Production
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```bash
+npm run build
+npm start
+```
 
-## Learn More
+## Project Structure
 
-To learn more about Next.js, take a look at the following resources:
+```
+app/
+├── page.tsx                 # Home page (/)
+├── layout.tsx               # Root layout with GameProvider
+├── globals.css              # Global styles
+├── context/
+│   └── GameContext.tsx      # Game state management
+├── customize/
+│   └── page.tsx             # Customize page
+├── game/
+│   └── page.tsx             # Game page
+├── highscore/
+│   └── page.tsx             # High score page
+└── instructions/
+    └── page.tsx             # Instructions page
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Routes
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+- **/** - Home screen with start and instructions buttons
+- **/customize** - Select grade level (K-5) and game mode
+- **/game** - Main gameplay with questions and timer
+- **/highscore** - View top 5 scores and save your name
+- **/instructions** - 4-step tutorial on how to play
 
-## Deploy on Vercel
+## Tech Stack
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+- Next.js 16 with App Router
+- React 19 with TypeScript
+- Context API for state management
+- localStorage for high scores
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+---
+
+© Hedgie Number Dash Studios
