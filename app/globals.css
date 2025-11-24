@@ -232,6 +232,13 @@ body {
     background-color: #F4D6A0;
 }
 
+.page-container.home-bg {
+    background-image: url('/images/home_background.png');
+    background-size: cover;
+    background-position: center center;
+    background-repeat: no-repeat;
+}
+
 .page-container.blue-bg {
     background-color: #5DADE2;
 }
