@@ -38,6 +38,17 @@ body {
     height: 100vh;
 }
 
+/* Hide number input spinners */
+input::-webkit-outer-spin-button,
+input::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+input[type=number] {
+    -moz-appearance: textfield;
+}
+
 /* Screen Management */
 .screen {
     display: none;
@@ -164,16 +175,6 @@ body {
 .btn.selected {
     background-color: #5DADE2;
     box-shadow: 0 0 0 4px rgba(93, 173, 226, 0.3);
-}
-
-/* Customize Screen */
-#customizeScreen {
-    background-color: #F4D6A0;
-}
-
-#customizeScreen .container {
-    background-color: #F4D6A0;
-    padding: 60px;
 }
 
 .section-title {
@@ -420,7 +421,7 @@ body {
 }
 
 .hedgehog.jumping {
-    animation: jump 0.6s ease-in-out;
+    animation: jump 1s ease-in-out;
 }
 
 .hedgehog.blinking {
@@ -428,8 +429,8 @@ body {
 }
 
 @keyframes jump {
-    0%, 100% { bottom: 0; }
-    50% { bottom: 150px; }
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-300px); }
 }
 
 @keyframes blink {

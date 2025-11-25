@@ -32,7 +32,7 @@ interface HighScore {
 }
 
 const initialState: GameState = {
-  selectedGrade: 'fifth',
+  selectedGrade: 'kindergarten',
   selectedMode: 'endless',
   score: 0,
   health: 3,
@@ -46,14 +46,32 @@ const initialState: GameState = {
 const GameContext = createContext<GameContextType | undefined>(undefined);
 
 export function GameProvider({ children }: { children: React.ReactNode }) {
-  const [gameState, setGameState] = useState<GameState>(initialState);
+  const [gameState, setGameState] = useState<GameState>(() => {
+    // Load saved grade and mode from localStorage on initial load
+    if (typeof window !== 'undefined') {
+      const savedGrade = localStorage.getItem('hedgieSelectedGrade');
+      const savedMode = localStorage.getItem('hedgieSelectedMode');
+      return {
+        ...initialState,
+        selectedGrade: savedGrade || initialState.selectedGrade,
+        selectedMode: savedMode || initialState.selectedMode,
+      };
+    }
+    return initialState;
+  });
 
   const setSelectedGrade = (grade: string) => {
     setGameState(prev => ({ ...prev, selectedGrade: grade }));
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('hedgieSelectedGrade', grade);
+    }
   };
 
   const setSelectedMode = (mode: string) => {
     setGameState(prev => ({ ...prev, selectedMode: mode }));
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('hedgieSelectedMode', mode);
+    }
   };
 
   const setScore = (score: number) => {

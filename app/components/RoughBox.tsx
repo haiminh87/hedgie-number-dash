@@ -94,7 +94,7 @@ export default function RoughBox({
           height: '100%',
         }}
       />
-      <div style={{ position: 'relative', padding: '15px 30px' }}>
+      <div style={{ position: 'relative', padding: '15px 30px', height: '100%', boxSizing: 'border-box' }}>
         {children}
       </div>
     </div>

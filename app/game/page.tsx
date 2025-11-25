@@ -116,24 +116,41 @@ export default function Game() {
       setIsJumping(true);
       setIsHurdleMoving(true);
 
-      // Move hurdle to the left
+      // Move hurdle to the left completely off screen
       const moveInterval = setInterval(() => {
         setHurdlePosition((prev) => {
-          if (prev <= -200) {
+          if (prev <= -400) {
             clearInterval(moveInterval);
-            return 1000; // Reset to right side
+            // Reset to right side for new hurdle to come in
+            setTimeout(() => {
+              setHurdlePosition(1200);
+              // Start moving new hurdle to center
+              const newHurdleInterval = setInterval(() => {
+                setHurdlePosition((pos) => {
+                  if (pos <= 600) {
+                    clearInterval(newHurdleInterval);
+                    setIsHurdleMoving(false);
+                    return 600;
+                  }
+                  return pos - 20;
+                });
+              }, 16);
+            }, 50);
+            return -400;
           }
-          return prev - 20;
+          return prev - 25;
         });
       }, 16);
 
+      // Generate new question when old hurdle is off screen
+      setTimeout(() => {
+        generateQuestion();
+      }, 500);
+
+      // Stop jumping after animation
       setTimeout(() => {
         setIsJumping(false);
-        setIsHurdleMoving(false);
-        generateQuestion();
-        clearInterval(moveInterval);
-        setHurdlePosition(600); // Reset hurdle position
-      }, 600);
+      }, 1000);
     } else {
       setScore((prev) => Math.max(0, prev - 4));
       setHealth((prev) => prev - 1);
@@ -264,7 +281,7 @@ export default function Game() {
                 className={`hedgehog ${isJumping ? 'jumping' : ''}`}
                 style={{
                   position: 'absolute',
-                  top: '430px',
+                  bottom: '120px',
                   left: '80px',
                   width: '200px',
                   height: '200px',
@@ -289,12 +306,22 @@ export default function Game() {
               {/* Answer Input */}
               <div style={{
                 position: 'absolute',
-                bottom: '30px',
-                right: '40px',
+                top: '0',
+                bottom: '0',
+                left: '0',
+                right: '0',
                 display: 'flex',
-                gap: '20px',
-                zIndex: 100
+                alignItems: 'flex-end',
+                justifyContent: 'center',
+                zIndex: 100,
+                pointerEvents: 'none'
               }}>
+                <div style={{
+                  display: 'flex',
+                  gap: '20px',
+                  marginBottom: '30px',
+                  pointerEvents: 'auto'
+                }}>
                 <RoughBox fillColor="#FFE599" style={{ display: 'inline-block' }}>
                   <input
                     type="number"
@@ -319,6 +346,7 @@ export default function Game() {
                 <RoughButton className="btn-green btn-large" onClick={handleSubmit}>
                   Submit
                 </RoughButton>
+                </div>
               </div>
             </div>
           </RoughBox>
