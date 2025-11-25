@@ -1,166 +1,114 @@
 'use client';
 
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import { useGame } from '../context/GameContext';
 import Image from 'next/image';
+import { useGame } from '../context/GameContext';
 import RoughButton from '../components/RoughButton';
 import RoughBox from '../components/RoughBox';
+import { generateQuestion } from '../utils/questionGenerator';
+import { GradeLevel } from '../types';
+import {
+  GAME_CONFIG,
+  ANIMATION_TIMING,
+  HURDLE_POSITIONS,
+  COLORS,
+} from '../constants';
 
 export default function Game() {
   const { gameState, updateGameState } = useGame();
   const router = useRouter();
+
   const [question, setQuestion] = useState('');
   const [answer, setAnswer] = useState<number>(0);
   const [userAnswer, setUserAnswer] = useState('');
-  const [score, setScore] = useState(0);
-  const [health, setHealth] = useState(3);
+  const [score, setScore] = useState(GAME_CONFIG.INITIAL_SCORE);
+  const [health, setHealth] = useState(GAME_CONFIG.INITIAL_HEALTH);
   const [isJumping, setIsJumping] = useState(false);
-  const [hurdlePosition, setHurdlePosition] = useState(600); // Position from left
+  const [hurdlePosition, setHurdlePosition] = useState(HURDLE_POSITIONS.START);
   const [isHurdleMoving, setIsHurdleMoving] = useState(false);
-  const timerRef = useRef<NodeJS.Timeout | null>(null);
 
-  const questionTemplates: any = {
-    kindergarten: [
-      { type: 'addition', max: 10 },
-      { type: 'subtraction', max: 10 }
-    ],
-    first: [
-      { type: 'addition', max: 20 },
-      { type: 'subtraction', max: 20 }
-    ],
-    second: [
-      { type: 'addition', max: 100 },
-      { type: 'subtraction', max: 100 },
-      { type: 'multiplication', max: 5 }
-    ],
-    third: [
-      { type: 'addition', max: 1000 },
-      { type: 'subtraction', max: 1000 },
-      { type: 'multiplication', max: 10 }
-    ],
-    fourth: [
-      { type: 'addition', max: 10000 },
-      { type: 'subtraction', max: 10000 },
-      { type: 'multiplication', max: 12 },
-      { type: 'division', max: 12 }
-    ],
-    fifth: [
-      { type: 'addition', max: 100000 },
-      { type: 'subtraction', max: 100000 },
-      { type: 'multiplication', max: 20 },
-      { type: 'division', max: 20 }
-    ]
-  };
+  const moveIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const newHurdleIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
-  const generateQuestion = () => {
-    const templates = questionTemplates[gameState.selectedGrade];
-    const template = templates[Math.floor(Math.random() * templates.length)];
+  const createNewQuestion = useCallback(() => {
+    const { questionText, correctAnswer } = generateQuestion(
+      gameState.selectedGrade as GradeLevel
+    );
+    setQuestion(questionText);
+    setAnswer(correctAnswer);
+  }, [gameState.selectedGrade]);
 
-    let questionText, correctAnswer;
-
-    switch (template.type) {
-      case 'addition':
-        const add1 = Math.floor(Math.random() * template.max) + 1;
-        const add2 = Math.floor(Math.random() * template.max) + 1;
-        questionText = `${add1} + ${add2}`;
-        correctAnswer = add1 + add2;
-        break;
-
-      case 'subtraction':
-        const sub1 = Math.floor(Math.random() * template.max) + 1;
-        const sub2 = Math.floor(Math.random() * sub1) + 1;
-        questionText = `${sub1} - ${sub2}`;
-        correctAnswer = sub1 - sub2;
-        break;
-
-      case 'multiplication':
-        const mult1 = Math.floor(Math.random() * template.max) + 1;
-        const mult2 = Math.floor(Math.random() * template.max) + 1;
-        questionText = `${mult1} × ${mult2}`;
-        correctAnswer = mult1 * mult2;
-        break;
-
-      case 'division':
-        const divisor = Math.floor(Math.random() * template.max) + 1;
-        const quotient = Math.floor(Math.random() * template.max) + 1;
-        const dividend = divisor * quotient;
-        questionText = `${dividend} ÷ ${divisor}`;
-        correctAnswer = quotient;
-        break;
-    }
-
-    setQuestion(questionText!);
-    setAnswer(correctAnswer!);
-  };
-
+  // Initialize first question
   useEffect(() => {
-    generateQuestion();
-  }, []);
+    createNewQuestion();
+  }, [createNewQuestion]);
 
-
+  // Navigate to highscore when health depletes
+  const hasNavigated = useRef(false);
   useEffect(() => {
-    if (health <= 0) {
+    if (health <= 0 && !hasNavigated.current) {
+      hasNavigated.current = true;
       updateGameState({ score });
       router.push('/highscore');
     }
   }, [health]);
 
+  // Cleanup intervals on unmount
+  useEffect(() => {
+    return () => {
+      if (moveIntervalRef.current) clearInterval(moveIntervalRef.current);
+      if (newHurdleIntervalRef.current) clearInterval(newHurdleIntervalRef.current);
+    };
+  }, []);
 
-  const handleSubmit = () => {
-    const userAns = parseInt(userAnswer);
+  const animateHurdle = useCallback(() => {
+    // Phase 1: Move hurdle off screen to the left (fast)
+    setIsHurdleMoving(true);
+    setHurdlePosition(HURDLE_POSITIONS.OFF_SCREEN_LEFT);
+
+    // Phase 2: After hurdle exits left, instantly reset to right (no animation)
+    setTimeout(() => {
+      setIsHurdleMoving(false); // Disable transition briefly
+      setHurdlePosition(HURDLE_POSITIONS.OFF_SCREEN_RIGHT);
+
+      // Phase 3: Animate hurdle coming in from right (slower)
+      setTimeout(() => {
+        setIsHurdleMoving(true);
+        setHurdlePosition(HURDLE_POSITIONS.START);
+
+        // Animation complete
+        setTimeout(() => {
+          setIsHurdleMoving(false);
+        }, 800);
+      }, 50);
+    }, 600); // Wait for exit animation to complete
+  }, []);
+
+  const handleSubmit = useCallback(() => {
+    const userAns = parseInt(userAnswer, 10);
     if (isNaN(userAns)) return;
 
     if (userAns === answer) {
-      setScore((prev) => prev + 5);
+      setScore((prev) => prev + GAME_CONFIG.POINTS_CORRECT);
       setIsJumping(true);
-      setIsHurdleMoving(true);
 
-      // Move hurdle to the left completely off screen
-      const moveInterval = setInterval(() => {
-        setHurdlePosition((prev) => {
-          if (prev <= -400) {
-            clearInterval(moveInterval);
-            // Reset to right side for new hurdle to come in
-            setTimeout(() => {
-              setHurdlePosition(1200);
-              // Start moving new hurdle to center
-              const newHurdleInterval = setInterval(() => {
-                setHurdlePosition((pos) => {
-                  if (pos <= 600) {
-                    clearInterval(newHurdleInterval);
-                    setIsHurdleMoving(false);
-                    return 600;
-                  }
-                  return pos - 20;
-                });
-              }, 16);
-            }, 50);
-            return -400;
-          }
-          return prev - 25;
-        });
-      }, 16);
+      // Animate hurdle
+      animateHurdle();
 
-      // Generate new question when old hurdle is off screen
-      setTimeout(() => {
-        generateQuestion();
-      }, 500);
+      // Generate new question when hurdle is off screen
+      setTimeout(createNewQuestion, ANIMATION_TIMING.NEW_QUESTION_DELAY);
 
-      // Stop jumping after animation
-      setTimeout(() => {
-        setIsJumping(false);
-      }, 1000);
+      // Stop jumping after animation completes
+      setTimeout(() => setIsJumping(false), ANIMATION_TIMING.JUMP_DURATION);
     } else {
-      setScore((prev) => Math.max(0, prev - 4));
+      setScore((prev) => Math.max(0, prev - GAME_CONFIG.POINTS_WRONG));
       setHealth((prev) => prev - 1);
-      setTimeout(() => {
-        generateQuestion();
-      }, 300);
+      setTimeout(createNewQuestion, ANIMATION_TIMING.WRONG_ANSWER_DELAY);
     }
 
     setUserAnswer('');
-  };
+  }, [userAnswer, answer, createNewQuestion, animateHurdle]);
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter') {
@@ -170,19 +118,8 @@ export default function Game() {
 
   return (
     <div className="page-container peach-bg">
-      <div style={{
-        display: 'flex',
-        justifyContent: 'center',
-        alignItems: 'center',
-        width: '100%',
-        height: '100%',
-        padding: '20px'
-      }}>
-        <div style={{
-          position: 'relative',
-          width: '1000px',
-          height: '750px'
-        }}>
+      <div className="page-content-wrapper">
+        <div className="page-content-box">
           <RoughBox
             fillColor="transparent"
             style={{
@@ -194,39 +131,22 @@ export default function Game() {
               backgroundSize: 'auto 100%',
               backgroundPosition: 'left center',
               backgroundRepeat: 'repeat-x',
-              backgroundColor: '#5DADE2',
-              padding: '0'
+              backgroundColor: COLORS.BLUE,
+              padding: '0',
             }}
           >
-            <div style={{
-              position: 'absolute',
-              top: 0,
-              left: 0,
-              width: '100%',
-              height: '100%'
-            }}>
+            <div className="game-content-layer">
               {/* HUD */}
-              <div style={{
-                position: 'absolute',
-                top: '20px',
-                left: '0',
-                right: '0',
-                display: 'flex',
-                justifyContent: 'space-between',
-                padding: '0 40px',
-                zIndex: 100
-              }}>
-                <RoughBox fillColor="#FFE599" style={{ display: 'inline-block' }}>
-                  <span style={{ fontFamily: 'Virgil, cursive', fontSize: '24px', fontWeight: 700, color: '#2C3E50' }}>
-                    Score: {score}
-                  </span>
+              <div className="game-hud">
+                <RoughBox fillColor={COLORS.YELLOW} style={{ display: 'inline-block' }}>
+                  <span className="score-text">Score: {score}</span>
                 </RoughBox>
-                <div style={{ display: 'flex', gap: '15px', fontSize: '40px' }}>
-                  {[...Array(3)].map((_, i) => (
-                    <span key={i} style={{
-                      filter: 'drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2))',
-                      opacity: i >= health ? 0.3 : 1
-                    }}>
+                <div className="hearts-container">
+                  {[...Array(GAME_CONFIG.INITIAL_HEALTH)].map((_, i) => (
+                    <span
+                      key={i}
+                      className={`heart ${i >= health ? 'lost' : ''}`}
+                    >
                       ❤️
                     </span>
                   ))}
@@ -234,118 +154,52 @@ export default function Game() {
               </div>
 
               {/* Hurdle with Question */}
-              <div style={{
-                position: 'absolute',
-                top: '350px',
-                left: `${hurdlePosition}px`,
-                width: '300px',
-                height: '300px',
-                zIndex: 20,
-                transition: isHurdleMoving ? 'none' : 'left 0.3s ease'
-              }}>
+              <div
+                className="hurdle-container"
+                style={{
+                  left: `${hurdlePosition}px`,
+                  transition: isHurdleMoving ? 'left 0.6s ease-in-out' : 'none',
+                }}
+              >
                 <Image
                   src="/images/img_hurdle.png"
                   alt="Hurdle"
                   width={300}
                   height={300}
-                  style={{
-                    width: '100%',
-                    height: '100%',
-                    objectFit: 'contain'
-                  }}
+                  style={{ width: '100%', height: '100%', objectFit: 'contain' }}
                 />
-                {/* Question on top of hurdle */}
-                <div style={{
-                  position: 'absolute',
-                  top: '80px',
-                  left: '0',
-                  right: '0',
-                  zIndex: 50,
-                  fontSize: '42px',
-                  fontWeight: 700,
-                  color: '#2C3E50',
-                  textAlign: 'center',
-                  fontFamily: 'Virgil, cursive',
-                  textShadow: '2px 2px 0px rgba(255, 255, 255, 0.8)',
-                  padding: '0 10px',
-                  wordWrap: 'break-word',
-                  lineHeight: '1.2'
-                }}>
-                  {question}
-                </div>
+                <div className="question-text">{question}</div>
               </div>
 
-
-              {/* Game Scene */}
-              <div
-                className={`hedgehog ${isJumping ? 'jumping' : ''}`}
-                style={{
-                  position: 'absolute',
-                  bottom: '120px',
-                  left: '80px',
-                  width: '200px',
-                  height: '200px',
-                  zIndex: 10
-                }}
-              >
+              {/* Hedgehog */}
+              <div className={`hedgehog ${isJumping ? 'jumping' : ''}`}>
                 <Image
                   src="/images/img_hedgehog.png"
                   alt="Hedgehog"
                   width={200}
                   height={200}
                   unoptimized
-                  style={{
-                    width: '100%',
-                    height: '100%',
-                    objectFit: 'contain'
-                  }}
+                  style={{ width: '100%', height: '100%', objectFit: 'contain' }}
                 />
               </div>
 
-
               {/* Answer Input */}
-              <div style={{
-                position: 'absolute',
-                top: '0',
-                bottom: '0',
-                left: '0',
-                right: '0',
-                display: 'flex',
-                alignItems: 'flex-end',
-                justifyContent: 'center',
-                zIndex: 100,
-                pointerEvents: 'none'
-              }}>
-                <div style={{
-                  display: 'flex',
-                  gap: '20px',
-                  marginBottom: '30px',
-                  pointerEvents: 'auto'
-                }}>
-                <RoughBox fillColor="#FFE599" style={{ display: 'inline-block' }}>
-                  <input
-                    type="number"
-                    style={{
-                      width: '250px',
-                      padding: '10px',
-                      fontSize: '24px',
-                      fontWeight: 700,
-                      border: 'none',
-                      background: 'transparent',
-                      color: '#2C3E50',
-                      fontFamily: 'Virgil, cursive',
-                      outline: 'none'
-                    }}
-                    placeholder="Your answer"
-                    value={userAnswer}
-                    onChange={(e) => setUserAnswer(e.target.value)}
-                    onKeyPress={handleKeyPress}
-                    autoFocus
-                  />
-                </RoughBox>
-                <RoughButton className="btn-green btn-large" onClick={handleSubmit}>
-                  Submit
-                </RoughButton>
+              <div className="answer-container">
+                <div className="answer-input-group">
+                  <RoughBox fillColor={COLORS.YELLOW} style={{ display: 'inline-block' }}>
+                    <input
+                      type="number"
+                      className="answer-input-field"
+                      placeholder="Your answer"
+                      value={userAnswer}
+                      onChange={(e) => setUserAnswer(e.target.value)}
+                      onKeyPress={handleKeyPress}
+                      autoFocus
+                    />
+                  </RoughBox>
+                  <RoughButton className="btn-green btn-large" onClick={handleSubmit}>
+                    Submit
+                  </RoughButton>
                 </div>
               </div>
             </div>
