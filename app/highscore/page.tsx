@@ -75,7 +75,7 @@ export default function Highscore() {
           <Link href="/" className="btn btn-green">
             Home
           </Link>
-          <Link href="/grade-level" className="btn btn-yellow">
+          <Link href="/game" className="btn btn-yellow">
             Play Again
           </Link>
         </div>

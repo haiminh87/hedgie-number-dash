@@ -292,6 +292,17 @@ input[type=number] {
     margin: 0 auto;
 }
 
+.difficulty-buttons {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    justify-content: center;
+    align-items: center;
+    padding: 0 80px;
+    max-width: 600px;
+    margin: 0 auto;
+}
+
 /* Game Page Styles */
 .game-content-layer {
     position: absolute;
@@ -317,6 +328,26 @@ input[type=number] {
     font-size: 24px;
     font-weight: 700;
     color: #2C3E50;
+}
+
+.timer-text {
+    font-family: 'Virgil', cursive;
+    font-size: 24px;
+    font-weight: 700;
+    color: #2C3E50;
+    min-width: 50px;
+    text-align: center;
+    display: inline-block;
+}
+
+.timer-warning {
+    color: #C0392B;
+    animation: pulse 0.5s ease-in-out infinite;
+}
+
+@keyframes pulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.1); }
 }
 
 .hearts-container {

@@ -1,27 +1,46 @@
-export type GradeLevel = 'kindergarten' | 'first' | 'second' | 'third' | 'fourth' | 'fifth';
+export type Competition = 'mathleague';
 
-export type GameMode = 'endless' | 'sprint';
+export type Difficulty = 'easy' | 'medium' | 'hard';
 
-export type QuestionType = 'addition' | 'subtraction' | 'multiplication' | 'division';
+export type NumberSenseQuestionType =
+  | 'addition'
+  | 'subtraction'
+  | 'multiplication'
+  | 'division'
+  | 'squares'
+  | 'square_roots'
+  | 'fractions'
+  | 'percentages'
+  | 'gcd_lcm'
+  | 'remainder'
+  | 'roman_numerals'
+  | 'unit_conversion'
+  | 'digit_problems'
+  | 'perimeter_area'
+  | 'sequences'
+  | 'prime_factors'
+  | 'order_of_operations';
 
-export interface QuestionTemplate {
-  type: QuestionType;
-  max: number;
+export interface GeneratedQuestion {
+  question: string;
+  answer: string;
+  type: NumberSenseQuestionType;
 }
 
 export interface HighScore {
   name: string;
   score: number;
+  competition: Competition;
 }
 
 export interface GameState {
-  selectedGrade: GradeLevel;
-  selectedMode: GameMode;
+  competition: Competition;
+  difficulty: Difficulty;
   score: number;
   health: number;
   questionsAnswered: number;
-  currentQuestion: string | null;
-  currentAnswer: number | null;
-  timeLimit: number;
+  currentQuestionIndex: number;
+  questions: GeneratedQuestion[];
+  isLoadingQuestions: boolean;
   gameRunning: boolean;
 }

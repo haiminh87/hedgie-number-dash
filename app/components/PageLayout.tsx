@@ -2,7 +2,6 @@
 
 import { ReactNode } from 'react';
 import RoughBox from './RoughBox';
-import { PAGE_DIMENSIONS } from '../constants';
 
 interface PageLayoutProps {
   children: ReactNode;

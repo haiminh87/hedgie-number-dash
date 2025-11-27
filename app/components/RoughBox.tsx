@@ -2,7 +2,8 @@
 
 import { useEffect, useRef } from 'react';
 import { drawRoughRoundedRect } from '../utils/roughCanvas';
-import { COLORS } from '../constants';
+
+const DEFAULT_FILL_COLOR = '#FFE599'; // Yellow
 
 interface RoughBoxProps {
   children: React.ReactNode;
@@ -13,7 +14,7 @@ interface RoughBoxProps {
 
 export default function RoughBox({
   children,
-  fillColor = COLORS.YELLOW,
+  fillColor = DEFAULT_FILL_COLOR,
   className = '',
   style = {},
 }: RoughBoxProps) {

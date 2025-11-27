@@ -7,7 +7,7 @@ export default function Home() {
     <PageLayout backgroundImage="/images/home_background.png">
       <div style={{ height: '170px' }} />
       <div className="home-buttons">
-        <Link href="/grade-level" style={{ textDecoration: 'none' }}>
+        <Link href="/difficulty" style={{ textDecoration: 'none' }}>
           <RoughButton className="btn-green btn-large">Start</RoughButton>
         </Link>
         <Link href="/instructions" style={{ textDecoration: 'none' }}>

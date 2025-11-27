@@ -6,61 +6,151 @@ import Image from 'next/image';
 import { useGame } from '../context/GameContext';
 import RoughButton from '../components/RoughButton';
 import RoughBox from '../components/RoughBox';
-import { generateQuestion } from '../utils/questionGenerator';
-import { GradeLevel } from '../types';
-import {
-  GAME_CONFIG,
-  ANIMATION_TIMING,
-  HURDLE_POSITIONS,
-  COLORS,
-} from '../constants';
+import { fetchQuestionBatch, checkAnswer } from '../utils/questionService';
+
+// Animation timings (in milliseconds)
+const ANIMATION_TIMING = {
+  JUMP_DURATION: 1000,
+  NEW_QUESTION_DELAY: 500,
+  WRONG_ANSWER_DELAY: 300,
+};
+
+// Timer settings
+const QUESTION_TIME_LIMIT = 30; // seconds per question
+
+// Hurdle positions
+const HURDLE_POSITIONS = {
+  START: 600,
+  OFF_SCREEN_LEFT: -400,
+  OFF_SCREEN_RIGHT: 1200,
+};
+
+// Colors
+const COLORS = {
+  YELLOW: '#FFE599',
+  BLUE: '#5DADE2',
+};
 
 export default function Game() {
-  const { gameState, updateGameState } = useGame();
+  const {
+    gameState,
+    updateGameState,
+    setQuestions,
+    nextQuestion,
+    getCurrentQuestion,
+    config,
+  } = useGame();
   const router = useRouter();
 
-  const [question, setQuestion] = useState('');
-  const [answer, setAnswer] = useState<number>(0);
   const [userAnswer, setUserAnswer] = useState('');
-  const [score, setScore] = useState(GAME_CONFIG.INITIAL_SCORE);
-  const [health, setHealth] = useState(GAME_CONFIG.INITIAL_HEALTH);
+  const [score, setScore] = useState(config.INITIAL_SCORE);
+  const [health, setHealth] = useState(config.INITIAL_HEALTH);
   const [isJumping, setIsJumping] = useState(false);
   const [hurdlePosition, setHurdlePosition] = useState(HURDLE_POSITIONS.START);
   const [isHurdleMoving, setIsHurdleMoving] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [loadingMessage, setLoadingMessage] = useState('Generating questions...');
+  const [timeLeft, setTimeLeft] = useState(QUESTION_TIME_LIMIT);
 
-  const moveIntervalRef = useRef<NodeJS.Timeout | null>(null);
-  const newHurdleIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const hasNavigated = useRef(false);
+  const hasInitialized = useRef(false);
+  const timerRef = useRef<NodeJS.Timeout | null>(null);
 
-  const createNewQuestion = useCallback(() => {
-    const { questionText, correctAnswer } = generateQuestion(
-      gameState.selectedGrade as GradeLevel
-    );
-    setQuestion(questionText);
-    setAnswer(correctAnswer);
-  }, [gameState.selectedGrade]);
-
-  // Initialize first question
+  // Load questions on mount
   useEffect(() => {
-    createNewQuestion();
-  }, [createNewQuestion]);
+    if (hasInitialized.current) return;
+    hasInitialized.current = true;
+
+    const loadQuestions = async () => {
+      setIsLoading(true);
+      setLoadingMessage('Generating MathLeague Number Sense questions...');
+
+      try {
+        const questions = await fetchQuestionBatch(20, gameState.difficulty);
+        setQuestions(questions);
+      } catch (error) {
+        console.error('Failed to load questions:', error);
+        setLoadingMessage('Using practice questions...');
+        // Fallback is handled in fetchQuestionBatch
+        const questions = await fetchQuestionBatch(20, gameState.difficulty);
+        setQuestions(questions);
+      }
+
+      setIsLoading(false);
+    };
+
+    loadQuestions();
+  }, [setQuestions]);
 
   // Navigate to highscore when health depletes
-  const hasNavigated = useRef(false);
   useEffect(() => {
     if (health <= 0 && !hasNavigated.current) {
       hasNavigated.current = true;
       updateGameState({ score });
       router.push('/highscore');
     }
-  }, [health]);
+  }, [health, score, updateGameState, router]);
 
-  // Cleanup intervals on unmount
+  // Load more questions when running low
   useEffect(() => {
+    const remainingQuestions =
+      gameState.questions.length - gameState.currentQuestionIndex;
+
+    if (remainingQuestions <= 5 && !gameState.isLoadingQuestions && !isLoading) {
+      updateGameState({ isLoadingQuestions: true });
+
+      fetchQuestionBatch(15, gameState.difficulty).then((newQuestions) => {
+        updateGameState({
+          questions: [...gameState.questions, ...newQuestions],
+          isLoadingQuestions: false,
+        });
+      });
+    }
+  }, [
+    gameState.currentQuestionIndex,
+    gameState.questions.length,
+    gameState.isLoadingQuestions,
+    gameState.questions,
+    isLoading,
+    updateGameState,
+  ]);
+
+  // Reset timer when question changes
+  useEffect(() => {
+    setTimeLeft(QUESTION_TIME_LIMIT);
+  }, [gameState.currentQuestionIndex]);
+
+  // Countdown timer
+  useEffect(() => {
+    if (isLoading || health <= 0) return;
+
+    timerRef.current = setInterval(() => {
+      setTimeLeft((prev) => {
+        if (prev <= 1) {
+          // Time's up - treat as wrong answer
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
     return () => {
-      if (moveIntervalRef.current) clearInterval(moveIntervalRef.current);
-      if (newHurdleIntervalRef.current) clearInterval(newHurdleIntervalRef.current);
+      if (timerRef.current) {
+        clearInterval(timerRef.current);
+      }
     };
-  }, []);
+  }, [isLoading, health, gameState.currentQuestionIndex]);
+
+  // Handle timeout
+  useEffect(() => {
+    if (timeLeft === 0 && !isLoading && health > 0) {
+      setScore((prev) => Math.max(0, prev - config.POINTS_WRONG));
+      setHealth((prev) => prev - 1);
+      setTimeout(() => {
+        nextQuestion();
+      }, ANIMATION_TIMING.WRONG_ANSWER_DELAY);
+    }
+  }, [timeLeft, isLoading, health, config.POINTS_WRONG, nextQuestion]);
 
   const animateHurdle = useCallback(() => {
     // Phase 1: Move hurdle off screen to the left (fast)
@@ -69,7 +159,7 @@ export default function Game() {
 
     // Phase 2: After hurdle exits left, instantly reset to right (no animation)
     setTimeout(() => {
-      setIsHurdleMoving(false); // Disable transition briefly
+      setIsHurdleMoving(false);
       setHurdlePosition(HURDLE_POSITIONS.OFF_SCREEN_RIGHT);
 
       // Phase 3: Animate hurdle coming in from right (slower)
@@ -82,39 +172,79 @@ export default function Game() {
           setIsHurdleMoving(false);
         }, 800);
       }, 50);
-    }, 600); // Wait for exit animation to complete
+    }, 600);
   }, []);
 
   const handleSubmit = useCallback(() => {
-    const userAns = parseInt(userAnswer, 10);
-    if (isNaN(userAns)) return;
+    if (!userAnswer.trim()) return;
 
-    if (userAns === answer) {
-      setScore((prev) => prev + GAME_CONFIG.POINTS_CORRECT);
+    const currentQ = getCurrentQuestion();
+    if (!currentQ) return;
+
+    const isCorrect = checkAnswer(userAnswer, currentQ.answer);
+
+    if (isCorrect) {
+      setScore((prev) => prev + config.POINTS_CORRECT);
       setIsJumping(true);
 
       // Animate hurdle
       animateHurdle();
 
-      // Generate new question when hurdle is off screen
-      setTimeout(createNewQuestion, ANIMATION_TIMING.NEW_QUESTION_DELAY);
+      // Move to next question
+      setTimeout(() => {
+        nextQuestion();
+      }, ANIMATION_TIMING.NEW_QUESTION_DELAY);
 
       // Stop jumping after animation completes
       setTimeout(() => setIsJumping(false), ANIMATION_TIMING.JUMP_DURATION);
     } else {
-      setScore((prev) => Math.max(0, prev - GAME_CONFIG.POINTS_WRONG));
+      setScore((prev) => Math.max(0, prev - config.POINTS_WRONG));
       setHealth((prev) => prev - 1);
-      setTimeout(createNewQuestion, ANIMATION_TIMING.WRONG_ANSWER_DELAY);
+      setTimeout(() => {
+        nextQuestion();
+      }, ANIMATION_TIMING.WRONG_ANSWER_DELAY);
     }
 
     setUserAnswer('');
-  }, [userAnswer, answer, createNewQuestion, animateHurdle]);
+  }, [userAnswer, getCurrentQuestion, nextQuestion, animateHurdle, config]);
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter') {
       handleSubmit();
     }
   };
+
+  const currentQuestion = getCurrentQuestion();
+
+  if (isLoading) {
+    return (
+      <div className="page-container peach-bg">
+        <div className="page-content-wrapper">
+          <div className="page-content-box">
+            <RoughBox
+              fillColor={COLORS.YELLOW}
+              style={{
+                width: '100%',
+                height: '100%',
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '20px',
+              }}
+            >
+              <div style={{ fontSize: '24px', fontWeight: 'bold' }}>
+                {loadingMessage}
+              </div>
+              <div style={{ fontSize: '18px' }}>
+                Preparing MathLeague Number Sense practice...
+              </div>
+            </RoughBox>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="page-container peach-bg">
@@ -138,11 +268,22 @@ export default function Game() {
             <div className="game-content-layer">
               {/* HUD */}
               <div className="game-hud">
-                <RoughBox fillColor={COLORS.YELLOW} style={{ display: 'inline-block' }}>
+                <RoughBox
+                  fillColor={COLORS.YELLOW}
+                  style={{ display: 'inline-block' }}
+                >
                   <span className="score-text">Score: {score}</span>
                 </RoughBox>
+                <RoughBox
+                  fillColor={timeLeft <= 10 ? '#FF6B6B' : COLORS.YELLOW}
+                  style={{ display: 'inline-block' }}
+                >
+                  <span className={`timer-text ${timeLeft <= 10 ? 'timer-warning' : ''}`}>
+                    {timeLeft}s
+                  </span>
+                </RoughBox>
                 <div className="hearts-container">
-                  {[...Array(GAME_CONFIG.INITIAL_HEALTH)].map((_, i) => (
+                  {[...Array(config.INITIAL_HEALTH)].map((_, i) => (
                     <span
                       key={i}
                       className={`heart ${i >= health ? 'lost' : ''}`}
@@ -168,7 +309,9 @@ export default function Game() {
                   height={300}
                   style={{ width: '100%', height: '100%', objectFit: 'contain' }}
                 />
-                <div className="question-text">{question}</div>
+                <div className="question-text">
+                  {currentQuestion?.question || 'Loading...'}
+                </div>
               </div>
 
               {/* Hedgehog */}
@@ -186,9 +329,12 @@ export default function Game() {
               {/* Answer Input */}
               <div className="answer-container">
                 <div className="answer-input-group">
-                  <RoughBox fillColor={COLORS.YELLOW} style={{ display: 'inline-block' }}>
+                  <RoughBox
+                    fillColor={COLORS.YELLOW}
+                    style={{ display: 'inline-block' }}
+                  >
                     <input
-                      type="number"
+                      type="text"
                       className="answer-input-field"
                       placeholder="Your answer"
                       value={userAnswer}
@@ -197,7 +343,10 @@ export default function Game() {
                       autoFocus
                     />
                   </RoughBox>
-                  <RoughButton className="btn-green btn-large" onClick={handleSubmit}>
+                  <RoughButton
+                    className="btn-green btn-large"
+                    onClick={handleSubmit}
+                  >
                     Submit
                   </RoughButton>
                 </div>

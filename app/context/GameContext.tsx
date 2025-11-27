@@ -1,80 +1,52 @@
 'use client';
 
 import React, { createContext, useContext, useState } from 'react';
-import { GameState, GradeLevel, GameMode, HighScore } from '../types';
-import { STORAGE_KEYS, GAME_CONFIG } from '../constants';
+import { GameState, Competition, HighScore, GeneratedQuestion, Difficulty } from '../types';
+
+// Game configuration
+const GAME_CONFIG = {
+  INITIAL_HEALTH: 3,
+  INITIAL_SCORE: 0,
+  POINTS_CORRECT: 5,
+  POINTS_WRONG: 4,
+  MAX_HIGH_SCORES: 5,
+};
+
+const STORAGE_KEYS = {
+  HIGH_SCORES: 'hedgieHighScores',
+};
 
 interface GameContextType {
   gameState: GameState;
-  setSelectedGrade: (grade: GradeLevel) => void;
-  setSelectedMode: (mode: GameMode) => void;
   setScore: (score: number) => void;
   setHealth: (health: number) => void;
+  setDifficulty: (difficulty: Difficulty) => void;
   resetGame: () => void;
   updateGameState: (updates: Partial<GameState>) => void;
   loadHighScores: () => HighScore[];
   saveHighScore: (name: string, score: number) => void;
+  setQuestions: (questions: GeneratedQuestion[]) => void;
+  nextQuestion: () => void;
+  getCurrentQuestion: () => GeneratedQuestion | null;
+  config: typeof GAME_CONFIG;
 }
 
 const initialState: GameState = {
-  selectedGrade: 'kindergarten',
-  selectedMode: 'endless',
+  competition: 'mathleague',
+  difficulty: 'medium',
   score: GAME_CONFIG.INITIAL_SCORE,
   health: GAME_CONFIG.INITIAL_HEALTH,
   questionsAnswered: 0,
-  currentQuestion: null,
-  currentAnswer: null,
-  timeLimit: GAME_CONFIG.DEFAULT_TIME_LIMIT,
+  currentQuestionIndex: 0,
+  questions: [],
+  isLoadingQuestions: false,
   gameRunning: false,
 };
 
 const GameContext = createContext<GameContextType | undefined>(undefined);
 
-function getStoredValue<T>(key: string, defaultValue: T): T {
-  if (typeof window === 'undefined') return defaultValue;
-  try {
-    const stored = localStorage.getItem(key);
-    return stored ? (stored as unknown as T) : defaultValue;
-  } catch {
-    return defaultValue;
-  }
-}
-
-function setStoredValue(key: string, value: string): void {
-  if (typeof window === 'undefined') return;
-  try {
-    localStorage.setItem(key, value);
-  } catch {
-    // Ignore localStorage errors
-  }
-}
-
 export function GameProvider({ children }: { children: React.ReactNode }) {
-  const [gameState, setGameState] = useState<GameState>(() => {
-    const savedGrade = getStoredValue<GradeLevel>(
-      STORAGE_KEYS.SELECTED_GRADE,
-      initialState.selectedGrade
-    );
-    const savedMode = getStoredValue<GameMode>(
-      STORAGE_KEYS.SELECTED_MODE,
-      initialState.selectedMode
-    );
-    return {
-      ...initialState,
-      selectedGrade: savedGrade,
-      selectedMode: savedMode,
-    };
-  });
-
-  const setSelectedGrade = (grade: GradeLevel) => {
-    setGameState((prev) => ({ ...prev, selectedGrade: grade }));
-    setStoredValue(STORAGE_KEYS.SELECTED_GRADE, grade);
-  };
-
-  const setSelectedMode = (mode: GameMode) => {
-    setGameState((prev) => ({ ...prev, selectedMode: mode }));
-    setStoredValue(STORAGE_KEYS.SELECTED_MODE, mode);
-  };
+  const [gameState, setGameState] = useState<GameState>(initialState);
 
   const setScore = (score: number) => {
     setGameState((prev) => ({ ...prev, score }));
@@ -84,16 +56,44 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
     setGameState((prev) => ({ ...prev, health }));
   };
 
+  const setDifficulty = (difficulty: Difficulty) => {
+    setGameState((prev) => ({ ...prev, difficulty }));
+  };
+
   const resetGame = () => {
     setGameState({
       ...initialState,
-      selectedGrade: gameState.selectedGrade,
-      selectedMode: gameState.selectedMode,
+      competition: gameState.competition,
+      difficulty: gameState.difficulty,
     });
   };
 
   const updateGameState = (updates: Partial<GameState>) => {
     setGameState((prev) => ({ ...prev, ...updates }));
+  };
+
+  const setQuestions = (questions: GeneratedQuestion[]) => {
+    setGameState((prev) => ({
+      ...prev,
+      questions,
+      currentQuestionIndex: 0,
+      isLoadingQuestions: false,
+    }));
+  };
+
+  const nextQuestion = () => {
+    setGameState((prev) => ({
+      ...prev,
+      currentQuestionIndex: prev.currentQuestionIndex + 1,
+      questionsAnswered: prev.questionsAnswered + 1,
+    }));
+  };
+
+  const getCurrentQuestion = (): GeneratedQuestion | null => {
+    if (gameState.currentQuestionIndex >= gameState.questions.length) {
+      return null;
+    }
+    return gameState.questions[gameState.currentQuestionIndex];
   };
 
   const loadHighScores = (): HighScore[] => {
@@ -110,7 +110,7 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
     if (typeof window === 'undefined') return;
     try {
       let scores = loadHighScores();
-      scores.push({ name, score });
+      scores.push({ name, score, competition: gameState.competition });
       scores.sort((a, b) => b.score - a.score);
       scores = scores.slice(0, GAME_CONFIG.MAX_HIGH_SCORES);
       localStorage.setItem(STORAGE_KEYS.HIGH_SCORES, JSON.stringify(scores));
@@ -123,14 +123,17 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
     <GameContext.Provider
       value={{
         gameState,
-        setSelectedGrade,
-        setSelectedMode,
         setScore,
         setHealth,
+        setDifficulty,
         resetGame,
         updateGameState,
         loadHighScores,
         saveHighScore,
+        setQuestions,
+        nextQuestion,
+        getCurrentQuestion,
+        config: GAME_CONFIG,
       }}
     >
       {children}
