@@ -51,6 +51,8 @@ export default function Game() {
   const [isLoading, setIsLoading] = useState(true);
   const [loadingMessage, setLoadingMessage] = useState('Generating questions...');
   const [timeLeft, setTimeLeft] = useState(QUESTION_TIME_LIMIT);
+  const [hedgehogX, setHedgehogX] = useState(-150);
+  const [hedgehogFrame, setHedgehogFrame] = useState(1);
 
   const hasNavigated = useRef(false);
   const hasInitialized = useRef(false);
@@ -81,6 +83,33 @@ export default function Game() {
 
     loadQuestions();
   }, [setQuestions]);
+
+  // Animate running hedgehog during loading
+  useEffect(() => {
+    if (!isLoading) return;
+
+    const SCREEN_WIDTH = 1000;
+    const HEDGEHOG_WIDTH = 150;
+    const SPEED = 5;
+
+    const moveInterval = setInterval(() => {
+      setHedgehogX((prev) => {
+        if (prev > SCREEN_WIDTH) {
+          return -HEDGEHOG_WIDTH;
+        }
+        return prev + SPEED;
+      });
+    }, 30);
+
+    const frameInterval = setInterval(() => {
+      setHedgehogFrame((prev) => (prev === 1 ? 2 : 1));
+    }, 150);
+
+    return () => {
+      clearInterval(moveInterval);
+      clearInterval(frameInterval);
+    };
+  }, [isLoading]);
 
   // Navigate to highscore when health depletes
   useEffect(() => {
@@ -222,22 +251,57 @@ export default function Game() {
         <div className="page-content-wrapper">
           <div className="page-content-box">
             <RoughBox
-              fillColor={COLORS.YELLOW}
+              fillColor="transparent"
               style={{
                 width: '100%',
                 height: '100%',
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: '20px',
+                position: 'relative',
+                overflow: 'hidden',
+                backgroundImage: 'url(/images/img_background_loading.png)',
+                backgroundSize: 'cover',
+                backgroundPosition: 'center',
               }}
             >
-              <div style={{ fontSize: '24px', fontWeight: 'bold' }}>
-                {loadingMessage}
+              {/* Running Hedgehog */}
+              <div
+                style={{
+                  position: 'absolute',
+                  bottom: '80px',
+                  left: `${hedgehogX}px`,
+                  width: '150px',
+                  height: '150px',
+                }}
+              >
+                <Image
+                  src={`/images/img_running_${hedgehogFrame}.png`}
+                  alt="Running Hedgehog"
+                  width={150}
+                  height={150}
+                  style={{ width: '100%', height: '100%', objectFit: 'contain' }}
+                  unoptimized
+                />
               </div>
-              <div style={{ fontSize: '18px' }}>
-                Preparing MathLeague Number Sense practice...
+              {/* Loading Message */}
+              <div
+                style={{
+                  position: 'absolute',
+                  top: '40%',
+                  left: '50%',
+                  transform: 'translate(-50%, -50%)',
+                  textAlign: 'center',
+                }}
+              >
+                <RoughBox
+                  fillColor={COLORS.YELLOW}
+                  style={{
+                    display: 'inline-block',
+                    padding: '20px 40px',
+                  }}
+                >
+                  <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#2C3E50' }}>
+                    {loadingMessage}
+                  </div>
+                </RoughBox>
               </div>
             </RoughBox>
           </div>
