@@ -31,6 +31,16 @@ const COLORS = {
   BLUE: '#5DADE2',
 };
 
+// Get font size class based on question length to ensure it fits in 2 lines
+function getQuestionFontClass(question: string | undefined): string {
+  if (!question) return '';
+  const length = question.length;
+  if (length > 45) return 'tiny-font';
+  if (length > 35) return 'extra-small-font';
+  if (length > 22) return 'small-font';
+  return '';
+}
+
 export default function Game() {
   const {
     gameState,
@@ -57,6 +67,7 @@ export default function Game() {
   const hasNavigated = useRef(false);
   const hasInitialized = useRef(false);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
+  const timeoutHandled = useRef(false);
 
   // Load questions on mount
   useEffect(() => {
@@ -147,6 +158,7 @@ export default function Game() {
   // Reset timer when question changes
   useEffect(() => {
     setTimeLeft(QUESTION_TIME_LIMIT);
+    timeoutHandled.current = false;
   }, [gameState.currentQuestionIndex]);
 
   // Countdown timer
@@ -172,14 +184,16 @@ export default function Game() {
 
   // Handle timeout
   useEffect(() => {
-    if (timeLeft === 0 && !isLoading && health > 0) {
+    if (timeLeft === 0 && !isLoading && health > 0 && !timeoutHandled.current) {
+      timeoutHandled.current = true;
       setScore((prev) => Math.max(0, prev - config.POINTS_WRONG));
       setHealth((prev) => prev - 1);
       setTimeout(() => {
         nextQuestion();
       }, ANIMATION_TIMING.WRONG_ANSWER_DELAY);
     }
-  }, [timeLeft, isLoading, health, config.POINTS_WRONG, nextQuestion]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [timeLeft, isLoading]);
 
   const animateHurdle = useCallback(() => {
     // Phase 1: Move hurdle off screen to the left (fast)
@@ -206,6 +220,7 @@ export default function Game() {
 
   const handleSubmit = useCallback(() => {
     if (!userAnswer.trim()) return;
+    if (timeLeft === 0) return; // Don't process if timer ran out
 
     const currentQ = getCurrentQuestion();
     if (!currentQ) return;
@@ -235,7 +250,7 @@ export default function Game() {
     }
 
     setUserAnswer('');
-  }, [userAnswer, getCurrentQuestion, nextQuestion, animateHurdle, config]);
+  }, [userAnswer, getCurrentQuestion, nextQuestion, animateHurdle, config, timeLeft]);
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter') {
@@ -373,7 +388,7 @@ export default function Game() {
                   height={300}
                   style={{ width: '100%', height: '100%', objectFit: 'contain' }}
                 />
-                <div className="question-text">
+                <div className={`question-text ${getQuestionFontClass(currentQuestion?.question)}`}>
                   {currentQuestion?.question || 'Loading...'}
                 </div>
               </div>

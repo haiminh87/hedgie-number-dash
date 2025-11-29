@@ -374,7 +374,8 @@ input[type=number] {
 
 .question-text {
     position: absolute;
-    top: 80px;
+    top: 50%;
+    transform: translateY(-60%);
     left: 0;
     right: 0;
     z-index: 50;
@@ -384,14 +385,26 @@ input[type=number] {
     text-align: center;
     font-family: 'Virgil', cursive;
     text-shadow: 2px 2px 0px rgba(255, 255, 255, 0.8);
-    padding: 0 10px;
+    padding: 0 15px;
     word-wrap: break-word;
     line-height: 1.2;
 }
 
+.question-text.small-font {
+    font-size: 32px;
+}
+
+.question-text.extra-small-font {
+    font-size: 24px;
+}
+
+.question-text.tiny-font {
+    font-size: 20px;
+}
+
 .hedgehog {
     position: absolute;
-    top: 450px;
+    top: 420px;
     left: 80px;
     width: 200px;
     height: 200px;

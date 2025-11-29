@@ -15,7 +15,7 @@ const DIFFICULTY_GUIDELINES: Record<string, string> = {
 - Squares of numbers 1-10 only
 - Simple percentages: 10%, 25%, 50%, 100%
 - No fractions, no complex operations
-- Example: "7 × 8 = ___", "45 + 32 = ___", "50% of 20 = ___"`,
+- Example: "7 × 8", "45 + 32", "50% of 20"`,
 
   medium: `MEDIUM DIFFICULTY GUIDELINES:
 - Two and three-digit numbers
@@ -26,7 +26,7 @@ const DIFFICULTY_GUIDELINES: Record<string, string> = {
 - Simple fractions addition/subtraction
 - GCD/LCM with smaller numbers
 - Order of operations with 2-3 operations
-- Example: "16² = ___", "The remainder of 93 ÷ 4 is ___", "40% of 45 = ___"`,
+- Example: "16²", "The remainder of 93 ÷ 4", "40% of 45"`,
 
   hard: `HARD DIFFICULTY GUIDELINES:
 - Large numbers, 3-digit × 2-digit multiplication
@@ -39,26 +39,26 @@ const DIFFICULTY_GUIDELINES: Record<string, string> = {
 - Sequences requiring pattern recognition
 - Roman numerals with larger values
 - Multiple order of operations
-- Example: "28² = ___", "√1764 = ___", "72 × 78 = ___", "5⁴ = ___"`,
+- Example: "28²", "√1764", "72 × 78", "5⁴"`,
 };
 
 const NUMBER_SENSE_PROMPT = `You are a math competition question generator for MathLeague.org Number Sense style problems. Generate questions that test mental math skills.
 
 Question types to include (vary the types based on difficulty):
 1. Basic arithmetic: addition, subtraction, multiplication, division
-2. Powers and squares (e.g., "16² = ___", "5⁴ = ___")
-3. Square roots (e.g., "√144 = ___")
+2. Powers and squares (e.g., "16²", "5⁴")
+3. Square roots (e.g., "√144")
 4. Fractions: addition, subtraction, comparing fractions
-5. Percentages (e.g., "40% of 45 is ___")
+5. Percentages (e.g., "40% of 45")
 6. GCD and LCM problems
-7. Remainders (e.g., "The remainder of 93 ÷ 4 is ___")
+7. Remainders (e.g., "The remainder of 93 ÷ 4")
 8. Roman numerals conversion
-9. Unit conversions (e.g., "120 seconds is ___ minutes")
-10. Digit problems (e.g., "The tens digit of 438 is ___")
+9. Unit conversions (e.g., "120 seconds in minutes")
+10. Digit problems (e.g., "The tens digit of 438")
 11. Perimeter and area of basic shapes
 12. Arithmetic sequences
 13. Prime factorization related questions
-14. Order of operations (e.g., "11 + 11 × 12 = ___")
+14. Order of operations (e.g., "11 + 11 × 12")
 
 IMPORTANT RULES:
 - All answers must be integers or simple fractions
@@ -68,21 +68,22 @@ IMPORTANT RULES:
 - Keep numbers appropriate for the specified difficulty level
 - VARIETY IS CRITICAL: Each batch must include at least 8 different question types from the list above
 - Use different numbers and operations in each question - avoid patterns like "X × 11" appearing multiple times
-- Vary the format: some word problems, some symbolic (e.g., "16² = ___" vs "The square of 16 is ___")
+- Vary the format: some word problems, some symbolic (e.g., "16²" vs "The square of 16")
 - Do NOT repeat similar question structures within the same batch
+- DO NOT include "= ___" or any blank placeholder in the question text - just show the expression or question
 
 {difficulty_guidelines}
 
 Generate exactly {count} questions. Return a JSON array with objects containing:
-- "question": the question text (use "___" for the blank)
+- "question": the question text (NO "= ___" or blanks - just the expression or question)
 - "answer": the numerical answer (as a string, fractions as "a/b")
 - "type": the question type category
 
 Example output format:
 [
-  {"question": "33 + 43 = ___", "answer": "76", "type": "addition"},
-  {"question": "16² = ___", "answer": "256", "type": "squares"},
-  {"question": "The remainder of 93 ÷ 4 is ___", "answer": "1", "type": "remainder"}
+  {"question": "33 + 43", "answer": "76", "type": "addition"},
+  {"question": "16²", "answer": "256", "type": "squares"},
+  {"question": "The remainder of 93 ÷ 4", "answer": "1", "type": "remainder"}
 ]
 
 Return ONLY the JSON array, no other text.`;
