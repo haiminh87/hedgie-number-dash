@@ -66,6 +66,10 @@ IMPORTANT RULES:
 - Questions should be solvable with mental math (no calculator)
 - STRICTLY follow the difficulty guidelines provided
 - Keep numbers appropriate for the specified difficulty level
+- VARIETY IS CRITICAL: Each batch must include at least 8 different question types from the list above
+- Use different numbers and operations in each question - avoid patterns like "X × 11" appearing multiple times
+- Vary the format: some word problems, some symbolic (e.g., "16² = ___" vs "The square of 16 is ___")
+- Do NOT repeat similar question structures within the same batch
 
 {difficulty_guidelines}
 
@@ -101,10 +105,10 @@ export async function POST(request: Request) {
         },
         {
           role: 'user',
-          content: `Generate ${count} Number Sense style math questions at ${difficulty.toUpperCase()} difficulty level. Follow the difficulty guidelines strictly. Mix different question types appropriate for this level.`,
+          content: `Generate ${count} HIGHLY VARIED Number Sense style math questions at ${difficulty.toUpperCase()} difficulty level. IMPORTANT: Ensure maximum variety - use at least 8 different question types, different number ranges, and different phrasings. Avoid any repetitive patterns. Each question should feel unique.`,
         },
       ],
-      temperature: 0.8,
+      temperature: 1.0,
       max_tokens: 2000,
     });
 
