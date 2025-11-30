@@ -789,6 +789,57 @@ input[type=number] {
     box-shadow: 0 0 0 4px rgba(144, 238, 144, 0.3);
 }
 
+/* Highscore Page Styles */
+.highscore-page-title {
+    font-family: 'Virgil', cursive;
+    font-size: 60px;
+    font-weight: 700;
+    color: #2C3E50;
+    margin-top: 30px;
+    margin-bottom: 20px;
+    text-align: center;
+}
+
+.highscore-table-header-cell {
+    font-family: 'Virgil', cursive;
+    font-size: 24px;
+    font-weight: 700;
+    color: #2C3E50;
+    text-align: center;
+}
+
+.highscore-table-cell {
+    font-family: 'Virgil', cursive;
+    font-size: 20px;
+    font-weight: 700;
+    color: #2C3E50;
+    text-align: center;
+}
+
+.highscore-empty-message {
+    padding: 40px 20px;
+    text-align: center;
+    font-family: 'Virgil', cursive;
+    font-size: 20px;
+    color: #2C3E50;
+}
+
+.highscore-dialog-title {
+    font-family: 'Virgil', cursive;
+    font-size: 32px;
+    font-weight: 700;
+    color: #2C3E50;
+    margin-bottom: 10px;
+}
+
+.highscore-dialog-subtitle {
+    font-family: 'Virgil', cursive;
+    font-size: 24px;
+    font-weight: 700;
+    color: #2C3E50;
+    margin-bottom: 25px;
+}
+
 /* Instructions Screen */
 #instructionsScreen {
     background-color: #F4D6A0;

@@ -67,17 +67,7 @@ export default function Highscore() {
         }}
       >
         {/* Title */}
-        <h1
-          style={{
-            fontFamily: 'Virgil, cursive',
-            fontSize: '60px',
-            fontWeight: 700,
-            color: '#2C3E50',
-            marginTop: '30px',
-            marginBottom: '20px',
-            textAlign: 'center',
-          }}
-        >
+        <h1 className="highscore-page-title">
           High Scores
         </h1>
 
@@ -121,39 +111,9 @@ export default function Highscore() {
               padding: '15px 10px',
             }}
           >
-            <div
-              style={{
-                fontFamily: 'Virgil, cursive',
-                fontSize: '24px',
-                fontWeight: 700,
-                color: '#2C3E50',
-                textAlign: 'center',
-              }}
-            >
-              #
-            </div>
-            <div
-              style={{
-                fontFamily: 'Virgil, cursive',
-                fontSize: '24px',
-                fontWeight: 700,
-                color: '#2C3E50',
-                textAlign: 'center',
-              }}
-            >
-              Name
-            </div>
-            <div
-              style={{
-                fontFamily: 'Virgil, cursive',
-                fontSize: '24px',
-                fontWeight: 700,
-                color: '#2C3E50',
-                textAlign: 'center',
-              }}
-            >
-              Score
-            </div>
+            <div className="highscore-table-header-cell">#</div>
+            <div className="highscore-table-header-cell">Name</div>
+            <div className="highscore-table-header-cell">Score</div>
           </div>
 
           {/* Scrollable Table Body */}
@@ -165,29 +125,9 @@ export default function Highscore() {
             }}
           >
             {isLoading ? (
-              <div
-                style={{
-                  padding: '40px 20px',
-                  textAlign: 'center',
-                  fontFamily: 'Virgil, cursive',
-                  fontSize: '20px',
-                  color: '#2C3E50',
-                }}
-              >
-                Loading...
-              </div>
+              <div className="highscore-empty-message">Loading...</div>
             ) : scores.length === 0 ? (
-              <div
-                style={{
-                  padding: '40px 20px',
-                  textAlign: 'center',
-                  fontFamily: 'Virgil, cursive',
-                  fontSize: '20px',
-                  color: '#2C3E50',
-                }}
-              >
-                No scores yet. Be the first!
-              </div>
+              <div className="highscore-empty-message">No scores yet. Be the first!</div>
             ) : (
               scores.map((score, index) => (
                 <div
@@ -199,24 +139,10 @@ export default function Highscore() {
                     padding: '12px 10px',
                   }}
                 >
+                  <div className="highscore-table-cell">{index + 1}</div>
                   <div
+                    className="highscore-table-cell"
                     style={{
-                      fontFamily: 'Virgil, cursive',
-                      fontSize: '20px',
-                      fontWeight: 700,
-                      color: '#2C3E50',
-                      textAlign: 'center',
-                    }}
-                  >
-                    {index + 1}
-                  </div>
-                  <div
-                    style={{
-                      fontFamily: 'Virgil, cursive',
-                      fontSize: '20px',
-                      fontWeight: 700,
-                      color: '#2C3E50',
-                      textAlign: 'center',
                       overflow: 'hidden',
                       textOverflow: 'ellipsis',
                       whiteSpace: 'nowrap',
@@ -224,17 +150,7 @@ export default function Highscore() {
                   >
                     {score.name}
                   </div>
-                  <div
-                    style={{
-                      fontFamily: 'Virgil, cursive',
-                      fontSize: '20px',
-                      fontWeight: 700,
-                      color: '#2C3E50',
-                      textAlign: 'center',
-                    }}
-                  >
-                    {score.score}
-                  </div>
+                  <div className="highscore-table-cell">{score.score}</div>
                 </div>
               ))
             )}
@@ -267,26 +183,8 @@ export default function Highscore() {
               maxWidth: '450px',
             }}
           >
-            <h2
-              style={{
-                fontFamily: 'Virgil, cursive',
-                fontSize: '32px',
-                fontWeight: 700,
-                color: '#2C3E50',
-                marginBottom: '10px',
-              }}
-            >
-              New High Score!
-            </h2>
-            <p
-              style={{
-                fontFamily: 'Virgil, cursive',
-                fontSize: '24px',
-                fontWeight: 700,
-                color: '#2C3E50',
-                marginBottom: '25px',
-              }}
-            >
+            <h2 className="highscore-dialog-title">New High Score!</h2>
+            <p className="highscore-dialog-subtitle">
               You scored {gameState.score} points!
             </p>
             <input
@@ -296,7 +194,7 @@ export default function Highscore() {
               maxLength={20}
               value={playerName}
               onChange={(e) => setPlayerName(e.target.value)}
-              onKeyPress={handleKeyPress}
+              onKeyDown={handleKeyPress}
               disabled={isSaving}
               autoFocus
               style={{

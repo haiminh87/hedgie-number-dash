@@ -7,6 +7,7 @@ import { useGame } from '../context/GameContext';
 import RoughButton from '../components/RoughButton';
 import RoughBox from '../components/RoughBox';
 import { fetchQuestionBatch, checkAnswer } from '../utils/questionService';
+import { COLORS } from '../constants/colors';
 
 // Animation timings (in milliseconds)
 const ANIMATION_TIMING = {
@@ -23,12 +24,6 @@ const HURDLE_POSITIONS = {
   START: 600,
   OFF_SCREEN_LEFT: -400,
   OFF_SCREEN_RIGHT: 1200,
-};
-
-// Colors
-const COLORS = {
-  YELLOW: '#FFE599',
-  BLUE: '#5DADE2',
 };
 
 // Get font size class based on question length to ensure it fits in 2 lines
@@ -79,22 +74,15 @@ export default function Game() {
       setIsLoading(true);
       setLoadingMessage('Generating MathLeague Number Sense questions...');
 
-      try {
-        const questions = await fetchQuestionBatch(20, gameState.difficulty);
-        setQuestions(questions);
-      } catch (error) {
-        console.error('Failed to load questions:', error);
-        setLoadingMessage('Using practice questions...');
-        // Fallback is handled in fetchQuestionBatch
-        const questions = await fetchQuestionBatch(20, gameState.difficulty);
-        setQuestions(questions);
-      }
+      // fetchQuestionBatch handles errors internally and returns fallback questions
+      const questions = await fetchQuestionBatch(20, gameState.difficulty);
+      setQuestions(questions);
 
       setIsLoading(false);
     };
 
     loadQuestions();
-  }, [setQuestions]);
+  }, [setQuestions, gameState.difficulty]);
 
   // Animate running hedgehog during loading
   useEffect(() => {
@@ -163,6 +151,7 @@ export default function Game() {
     gameState.questions.length,
     gameState.isLoadingQuestions,
     gameState.questions,
+    gameState.difficulty,
     isLoading,
     updateGameState,
   ]);
@@ -204,8 +193,7 @@ export default function Game() {
         nextQuestion();
       }, ANIMATION_TIMING.WRONG_ANSWER_DELAY);
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [timeLeft, isLoading]);
+  }, [timeLeft, isLoading, health, config.POINTS_WRONG, nextQuestion]);
 
   const animateHurdle = useCallback(() => {
     // Phase 1: Move hurdle off screen to the left (fast)
@@ -366,7 +354,7 @@ export default function Game() {
                   <span className="score-text">Score: {score}</span>
                 </RoughBox>
                 <RoughBox
-                  fillColor={timeLeft <= 10 ? '#FF6B6B' : COLORS.YELLOW}
+                  fillColor={timeLeft <= 10 ? COLORS.RED : COLORS.YELLOW}
                   style={{ display: 'inline-block' }}
                 >
                   <span className={`timer-text ${timeLeft <= 10 ? 'timer-warning' : ''}`}>
@@ -430,7 +418,7 @@ export default function Game() {
                       placeholder="Your answer"
                       value={userAnswer}
                       onChange={(e) => setUserAnswer(e.target.value)}
-                      onKeyPress={handleKeyPress}
+                      onKeyDown={handleKeyPress}
                       autoFocus
                     />
                   </RoughBox>

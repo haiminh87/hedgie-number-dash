@@ -2,10 +2,7 @@
 
 import { useEffect, useRef } from 'react';
 import { drawRoughRoundedRect, getButtonColorFromClassName } from '../utils/roughCanvas';
-
-const COLORS = {
-  PRIMARY: '#2C3E50',
-};
+import { COLORS } from '../constants/colors';
 
 interface RoughButtonProps {
   children: React.ReactNode;

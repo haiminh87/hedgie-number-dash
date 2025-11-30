@@ -1,13 +1,5 @@
 import rough from 'roughjs';
-
-// Colors
-const COLORS = {
-  PRIMARY: '#2C3E50',
-  GREEN: '#90EE90',
-  YELLOW: '#FFE599',
-  CYAN: '#A8E6E3',
-  BLUE: '#5DADE2',
-};
+import { COLORS } from '../constants/colors';
 
 export interface RoughPathOptions {
   fillColor: string;

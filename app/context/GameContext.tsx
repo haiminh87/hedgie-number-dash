@@ -1,7 +1,7 @@
 'use client';
 
 import React, { createContext, useContext, useState } from 'react';
-import { GameState, Competition, HighScore, GeneratedQuestion, Difficulty } from '../types';
+import { GameState, HighScore, GeneratedQuestion, Difficulty } from '../types';
 
 // Game configuration
 const GAME_CONFIG = {
@@ -10,10 +10,6 @@ const GAME_CONFIG = {
   POINTS_CORRECT: 5,
   POINTS_WRONG: 4,
   MAX_HIGH_SCORES: 5,
-};
-
-const STORAGE_KEYS = {
-  HIGH_SCORES: 'hedgieHighScores',
 };
 
 interface GameContextType {

@@ -1,9 +1,7 @@
 import { GeneratedQuestion } from '../types';
 
-const BATCH_SIZE = 20;
-
 export async function fetchQuestionBatch(
-  count: number = BATCH_SIZE,
+  count: number = 20,
   difficulty: 'easy' | 'medium' | 'hard' = 'medium'
 ): Promise<GeneratedQuestion[]> {
   try {
@@ -70,17 +68,27 @@ export function checkAnswer(userAnswer: string, correctAnswer: string): boolean 
 
   // Try to compare as numbers
   try {
-    // Handle fractions
-    const parseValue = (str: string): number => {
+    // Handle fractions safely
+    const parseValue = (str: string): number | null => {
       if (str.includes('/')) {
-        const [num, denom] = str.split('/').map(Number);
+        const parts = str.split('/');
+        if (parts.length !== 2) return null;
+        const num = Number(parts[0]);
+        const denom = Number(parts[1]);
+        if (isNaN(num) || isNaN(denom) || denom === 0) return null;
         return num / denom;
       }
-      return parseFloat(str);
+      const value = parseFloat(str);
+      return isNaN(value) ? null : value;
     };
 
     const userNum = parseValue(normalizedUser);
     const correctNum = parseValue(normalizedCorrect);
+
+    // If either value couldn't be parsed, return false
+    if (userNum === null || correctNum === null) {
+      return false;
+    }
 
     // Allow small floating point differences
     return Math.abs(userNum - correctNum) < 0.0001;
