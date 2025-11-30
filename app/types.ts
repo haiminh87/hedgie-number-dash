@@ -31,6 +31,7 @@ export interface HighScore {
   name: string;
   score: number;
   competition: Competition;
+  difficulty: Difficulty;
 }
 
 export interface GameState {

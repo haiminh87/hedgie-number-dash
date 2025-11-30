@@ -8,6 +8,7 @@ interface PageLayoutProps {
   backgroundImage?: string;
   backgroundClass?: 'peach-bg' | 'blue-bg';
   boxStyle?: React.CSSProperties;
+  boxFillColor?: string;
 }
 
 export default function PageLayout({
@@ -15,6 +16,7 @@ export default function PageLayout({
   backgroundImage,
   backgroundClass = 'peach-bg',
   boxStyle = {},
+  boxFillColor = 'transparent',
 }: PageLayoutProps) {
   const defaultBoxStyle: React.CSSProperties = {
     width: '100%',
@@ -36,7 +38,7 @@ export default function PageLayout({
       <div className="page-content-wrapper">
         <div className="page-content-box">
           <RoughBox
-            fillColor="transparent"
+            fillColor={boxFillColor}
             style={{ ...defaultBoxStyle, ...boxStyle }}
           >
             {children}

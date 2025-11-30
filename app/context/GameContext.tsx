@@ -23,8 +23,8 @@ interface GameContextType {
   setDifficulty: (difficulty: Difficulty) => void;
   resetGame: () => void;
   updateGameState: (updates: Partial<GameState>) => void;
-  loadHighScores: () => HighScore[];
-  saveHighScore: (name: string, score: number) => void;
+  fetchHighScores: (difficulty: Difficulty) => Promise<HighScore[]>;
+  saveHighScore: (name: string, score: number) => Promise<void>;
   setQuestions: (questions: GeneratedQuestion[]) => void;
   nextQuestion: () => void;
   getCurrentQuestion: () => GeneratedQuestion | null;
@@ -96,26 +96,37 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
     return gameState.questions[gameState.currentQuestionIndex];
   };
 
-  const loadHighScores = (): HighScore[] => {
-    if (typeof window === 'undefined') return [];
+  const fetchHighScores = async (difficulty: Difficulty): Promise<HighScore[]> => {
     try {
-      const stored = localStorage.getItem(STORAGE_KEYS.HIGH_SCORES);
-      return stored ? JSON.parse(stored) : [];
-    } catch {
+      const response = await fetch(`/api/highscores?difficulty=${difficulty}`);
+      if (!response.ok) {
+        throw new Error('Failed to fetch high scores');
+      }
+      return await response.json();
+    } catch (error) {
+      console.error('Error fetching high scores:', error);
       return [];
     }
   };
 
-  const saveHighScore = (name: string, score: number) => {
-    if (typeof window === 'undefined') return;
+  const saveHighScore = async (name: string, score: number): Promise<void> => {
     try {
-      let scores = loadHighScores();
-      scores.push({ name, score, competition: gameState.competition });
-      scores.sort((a, b) => b.score - a.score);
-      scores = scores.slice(0, GAME_CONFIG.MAX_HIGH_SCORES);
-      localStorage.setItem(STORAGE_KEYS.HIGH_SCORES, JSON.stringify(scores));
-    } catch {
-      // Ignore localStorage errors
+      const response = await fetch('/api/highscores', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          name,
+          score,
+          difficulty: gameState.difficulty,
+        }),
+      });
+      if (!response.ok) {
+        throw new Error('Failed to save high score');
+      }
+    } catch (error) {
+      console.error('Error saving high score:', error);
     }
   };
 
@@ -128,7 +139,7 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
         setDifficulty,
         resetGame,
         updateGameState,
-        loadHighScores,
+        fetchHighScores,
         saveHighScore,
         setQuestions,
         nextQuestion,
