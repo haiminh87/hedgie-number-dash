@@ -41,6 +41,7 @@ const initialState: GameState = {
   questions: [],
   isLoadingQuestions: false,
   gameRunning: false,
+  showNameEntry: false,
 };
 
 const GameContext = createContext<GameContextType | undefined>(undefined);

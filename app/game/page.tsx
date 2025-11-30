@@ -48,6 +48,7 @@ export default function Game() {
     setQuestions,
     nextQuestion,
     getCurrentQuestion,
+    fetchHighScores,
     config,
   } = useGame();
   const router = useRouter();
@@ -126,10 +127,21 @@ export default function Game() {
   useEffect(() => {
     if (health <= 0 && !hasNavigated.current) {
       hasNavigated.current = true;
-      updateGameState({ score });
-      router.push('/highscore');
+
+      const checkAndNavigate = async () => {
+        // Fetch current highscores to check if player qualifies
+        const highScores = await fetchHighScores(gameState.difficulty);
+        const qualifies = highScores.length < 10 ||
+          score > (highScores[highScores.length - 1]?.score || 0);
+
+        // Update game state with score and qualification status
+        updateGameState({ score, showNameEntry: qualifies });
+        router.push('/highscore');
+      };
+
+      checkAndNavigate();
     }
-  }, [health, score, updateGameState, router]);
+  }, [health, score, updateGameState, router, fetchHighScores, gameState.difficulty]);
 
   // Load more questions when running low
   useEffect(() => {

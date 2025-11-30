@@ -15,11 +15,10 @@ const DIFFICULTIES: { id: Difficulty; label: string }[] = [
 ];
 
 export default function Highscore() {
-  const { gameState, fetchHighScores, saveHighScore } = useGame();
+  const { gameState, fetchHighScores, saveHighScore, updateGameState } = useGame();
   const [selectedDifficulty, setSelectedDifficulty] = useState<Difficulty>(gameState.difficulty);
   const [scores, setScores] = useState<HighScore[]>([]);
   const [playerName, setPlayerName] = useState('');
-  const [showNameEntry, setShowNameEntry] = useState(false);
   const [scoreSaved, setScoreSaved] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
@@ -36,29 +35,12 @@ export default function Highscore() {
     loadScores(selectedDifficulty);
   }, [selectedDifficulty, loadScores]);
 
-  useEffect(() => {
-    // Check if player qualifies for high scores (only on initial load, for current difficulty)
-    const checkQualification = async () => {
-      if (!scoreSaved && gameState.score > 0) {
-        const currentDifficultyScores = await fetchHighScores(gameState.difficulty);
-        if (
-          currentDifficultyScores.length < 10 ||
-          gameState.score > (currentDifficultyScores[currentDifficultyScores.length - 1]?.score || 0)
-        ) {
-          setShowNameEntry(true);
-          setSelectedDifficulty(gameState.difficulty);
-        }
-      }
-    };
-    checkQualification();
-  }, []);
-
   const handleSaveScore = async () => {
     setIsSaving(true);
     const name = playerName.trim() || 'Anonymous';
     await saveHighScore(name, gameState.score);
     await loadScores(selectedDifficulty);
-    setShowNameEntry(false);
+    updateGameState({ showNameEntry: false });
     setScoreSaved(true);
     setIsSaving(false);
   };
@@ -259,48 +241,78 @@ export default function Highscore() {
           </div>
         </RoughBox>
 
-        {/* Name Entry */}
-        {showNameEntry && (
-          <div
+      </div>
+
+      {/* Name Entry Dialog */}
+      {gameState.showNameEntry && (
+        <div
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: 'rgba(0, 0, 0, 0.6)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 1000,
+          }}
+        >
+          <RoughBox
+            fillColor="#FFE599"
             style={{
-              marginTop: '20px',
+              padding: '40px 50px',
               textAlign: 'center',
+              maxWidth: '450px',
             }}
           >
+            <h2
+              style={{
+                fontFamily: 'Virgil, cursive',
+                fontSize: '32px',
+                fontWeight: 700,
+                color: '#2C3E50',
+                marginBottom: '10px',
+              }}
+            >
+              New High Score!
+            </h2>
             <p
               style={{
                 fontFamily: 'Virgil, cursive',
-                fontSize: '20px',
+                fontSize: '24px',
                 fontWeight: 700,
                 color: '#2C3E50',
-                marginBottom: '15px',
+                marginBottom: '25px',
               }}
             >
-              Congratulations! You scored {gameState.score} points!
+              You scored {gameState.score} points!
             </p>
-            <div style={{ display: 'flex', gap: '15px', justifyContent: 'center' }}>
-              <input
-                type="text"
-                className="name-input"
-                placeholder="Enter your name"
-                maxLength={20}
-                value={playerName}
-                onChange={(e) => setPlayerName(e.target.value)}
-                onKeyPress={handleKeyPress}
-                disabled={isSaving}
-                style={{
-                  width: '250px',
-                  padding: '12px 20px',
-                  fontSize: '20px',
-                }}
-              />
-              <RoughButton className="btn-green" onClick={handleSaveScore} disabled={isSaving}>
-                {isSaving ? 'Saving...' : 'Save'}
-              </RoughButton>
-            </div>
-          </div>
-        )}
-      </div>
+            <input
+              type="text"
+              className="name-input"
+              placeholder="Enter your name"
+              maxLength={20}
+              value={playerName}
+              onChange={(e) => setPlayerName(e.target.value)}
+              onKeyPress={handleKeyPress}
+              disabled={isSaving}
+              autoFocus
+              style={{
+                width: '100%',
+                padding: '15px 20px',
+                fontSize: '22px',
+                marginBottom: '20px',
+                boxSizing: 'border-box',
+              }}
+            />
+            <RoughButton className="btn-green btn-large" onClick={handleSaveScore} disabled={isSaving}>
+              {isSaving ? 'Saving...' : 'Save Score'}
+            </RoughButton>
+          </RoughBox>
+        </div>
+      )}
 
       {/* Navigation Buttons */}
       <div className="page-nav-button-left">

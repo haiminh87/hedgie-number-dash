@@ -44,4 +44,5 @@ export interface GameState {
   questions: GeneratedQuestion[];
   isLoadingQuestions: boolean;
   gameRunning: boolean;
+  showNameEntry: boolean;
 }
