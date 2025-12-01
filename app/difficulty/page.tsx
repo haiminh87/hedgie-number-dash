@@ -30,7 +30,7 @@ export default function DifficultyPage() {
   };
 
   return (
-    <PageLayout backgroundImage="/images/img_mode.png">
+    <PageLayout backgroundImage="/images/img_background_level.png">
       <div style={{ height: '180px' }} />
       <div className="difficulty-buttons">
         {DIFFICULTIES.map(({ id, label }) => (
