@@ -159,8 +159,14 @@ export default function Game() {
   // Reset timer when question changes
   useEffect(() => {
     setTimeLeft(QUESTION_TIME_LIMIT);
-    timeoutHandled.current = false;
   }, [gameState.currentQuestionIndex]);
+
+  // Reset timeoutHandled only when timeLeft is actually non-zero
+  useEffect(() => {
+    if (timeLeft > 0) {
+      timeoutHandled.current = false;
+    }
+  }, [timeLeft]);
 
   // Countdown timer
   useEffect(() => {
