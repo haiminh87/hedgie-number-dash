@@ -56,7 +56,7 @@ export default function Highscore() {
   };
 
   return (
-    <PageLayout backgroundClass="peach-bg" backgroundImage="/images/img_background_loading.png">
+    <PageLayout backgroundClass="peach-bg" backgroundImage="/images/img_background_highscores.png">
       <div
         style={{
           display: 'flex',
@@ -66,10 +66,8 @@ export default function Highscore() {
           padding: '20px 40px',
         }}
       >
-        {/* Title */}
-        <h1 className="highscore-page-title">
-          High Scores
-        </h1>
+        {/* Spacer to reserve space for title in background */}
+        <div style={{ height: '110px' }} />
 
         {/* Difficulty Tabs */}
         <div
